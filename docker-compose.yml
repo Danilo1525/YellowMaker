@@ -1,0 +1,83 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: yellowmaker
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orchestrator_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  orchestrator:
+    build: ./orchestrator
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=yellowmaker
+      - DB_PASSWORD=password
+      - DB_NAME=orchestrator_db
+      - KAFKA_BROKER=kafka:29092
+      - REDIS_ADDR=redis:6379
+    volumes:
+      - uploads_data:/uploads
+
+  data-processor:
+    build: ./data-processor
+    ports:
+      - "8000:8000"
+    depends_on:
+      - kafka
+      - redis
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - REDIS_ADDR=redis:6379
+      - DUCKDB_PATH=/data/analytics.duckdb
+    volumes:
+      - duckdb_data:/data
+      - uploads_data:/uploads
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - orchestrator
+
+volumes:
+  postgres_data:
+  duckdb_data:
+  uploads_data:
