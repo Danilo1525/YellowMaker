@@ -17,6 +17,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import CodeMirror from "@uiw/react-codemirror";
+import { python } from "@codemirror/lang-python";
+import { autocompletion } from "@codemirror/autocomplete";
+import { pandasAutocomplete } from "../../utils/pandasCompletions";
 
 export default function ScriptBlock({ block, onChange }) {
   const [running, setRunning] = useState(false);
@@ -102,12 +106,24 @@ export default function ScriptBlock({ block, onChange }) {
       </div>
 
       <div className="space-y-4">
-        <textarea
-          value={block.code}
-          onChange={(e) => onChange({ code: e.target.value })}
-          className="w-full h-40 p-3 bg-gray-900 text-gray-100 font-mono text-sm rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-          spellCheck="false"
-        />
+        <div className="border border-gray-700 rounded-md overflow-hidden bg-[#282c34]">
+          <CodeMirror
+            value={block.code}
+            height="200px"
+            theme="dark"
+            extensions={[
+              python(),
+              autocompletion({ override: [pandasAutocomplete] }),
+            ]}
+            onChange={(value) => onChange({ code: value })}
+            className="text-sm border-0"
+            basicSetup={{
+              lineNumbers: true,
+              foldGutter: true,
+              highlightActiveLine: true,
+            }}
+          />
+        </div>
 
         {error && (
           <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm font-mono flex items-start">

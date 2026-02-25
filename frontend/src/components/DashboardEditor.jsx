@@ -13,12 +13,13 @@ import ScriptBlock from "./blocks/ScriptBlock";
 import VisualizationBlock from "./blocks/VisualizationBlock";
 import api from "../services/api";
 
-export default function DashboardEditor() {
+export default function DashboardEditor({ initialDashboard }) {
   const [dashboard, setDashboard] = useState({
     name: "Untitled Dashboard",
     description: "",
     blocks: [],
   });
+  const [dashboardId, setDashboardId] = useState(null);
 
   const addBlock = (type) => {
     const newBlock = {
@@ -53,31 +54,38 @@ export default function DashboardEditor() {
     });
   };
 
-  const [dashboardId, setDashboardId] = useState(null);
-
   React.useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await api.get("/dashboards");
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          const loadedDash = response.data.data[0]; // Load most recent
-          setDashboard({
-            name: loadedDash.name,
-            description: loadedDash.description || "",
-            blocks: loadedDash.blocks || [],
-          });
-          setDashboardId(loadedDash.id);
+    if (initialDashboard) {
+      setDashboard({
+        name: initialDashboard.name || "Untitled Dashboard",
+        description: initialDashboard.description || "",
+        blocks: initialDashboard.blocks || [],
+      });
+      setDashboardId(initialDashboard.id);
+    } else {
+      const fetchDashboard = async () => {
+        try {
+          const response = await api.get("/dashboards");
+          if (
+            response.data &&
+            response.data.data &&
+            response.data.data.length > 0
+          ) {
+            const loadedDash = response.data.data[0]; // Load most recent
+            setDashboard({
+              name: loadedDash.name,
+              description: loadedDash.description || "",
+              blocks: loadedDash.blocks || [],
+            });
+            setDashboardId(loadedDash.id);
+          }
+        } catch (err) {
+          console.error("Failed to load dashboard on startup:", err);
         }
-      } catch (err) {
-        console.error("Failed to load dashboard on startup:", err);
-      }
-    };
-    fetchDashboard();
-  }, []);
+      };
+      fetchDashboard();
+    }
+  }, [initialDashboard]);
 
   const handleSave = async () => {
     try {
