@@ -58,6 +58,16 @@ func createTables() {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (owner_id) REFERENCES users(id)
 	);
+
+	CREATE TABLE IF NOT EXISTS dashboards (
+		id SERIAL PRIMARY KEY,
+		user_id INT NOT NULL,
+		name TEXT NOT NULL,
+		description TEXT,
+		blocks JSONB NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);
 	`
 	_, err := DB.Exec(query)
 	if err != nil {

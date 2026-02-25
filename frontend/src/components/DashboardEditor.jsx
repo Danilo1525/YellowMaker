@@ -53,11 +53,44 @@ export default function DashboardEditor() {
     });
   };
 
+  const [dashboardId, setDashboardId] = useState(null);
+
+  React.useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await api.get("/dashboards");
+        if (
+          response.data &&
+          response.data.data &&
+          response.data.data.length > 0
+        ) {
+          const loadedDash = response.data.data[0]; // Load most recent
+          setDashboard({
+            name: loadedDash.name,
+            description: loadedDash.description || "",
+            blocks: loadedDash.blocks || [],
+          });
+          setDashboardId(loadedDash.id);
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard on startup:", err);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
   const handleSave = async () => {
     try {
-      // Mock save for now as Orchestrator doesn't have the endpoint yet
-      console.log("Saving dashboard:", dashboard);
-      alert("Dashboard saved successfully! (Mock)");
+      const payload = {
+        name: dashboard.name || "Untitled",
+        description: dashboard.description || "",
+        blocks: dashboard.blocks,
+      };
+
+      const response = await api.post("/dashboards", payload);
+      setDashboardId(response.data.id);
+
+      alert("Dashboard saved successfully!");
     } catch (err) {
       console.error(err);
       alert("Error saving dashboard");
